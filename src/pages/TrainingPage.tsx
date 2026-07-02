@@ -61,7 +61,13 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
   const [active, setActive] = useState<ActiveDrill | null>(() =>
     pendingSeed ? { drill: drillFromSeed(pendingSeed), kind: 'drill' } : null,
   );
+  const [seq, setSeq] = useState(0);
   const weak = useMemo(findWeakSpots, [active]);
+
+  const startActive = (a: ActiveDrill) => {
+    setActive(a);
+    setSeq((s) => s + 1);
+  };
 
   const exit = () => {
     setActive(null);
@@ -69,13 +75,19 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
   };
 
   const startFromHint = (hint: Hint) => {
-    if (hint.drill) setActive({ drill: drillFromSeed(hint.drill), kind: 'drill' });
+    if (hint.drill) startActive({ drill: drillFromSeed(hint.drill), kind: 'drill' });
   };
 
   if (active) {
     return (
       <div className="page">
-        <TypingExercise drill={active.drill} kind={active.kind} onExit={exit} onDrill={startFromHint} />
+        <TypingExercise
+          key={seq}
+          drill={active.drill}
+          kind={active.kind}
+          onExit={exit}
+          onDrill={startFromHint}
+        />
       </div>
     );
   }
@@ -104,7 +116,7 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
                 <button
                   className="btn"
                   onClick={() =>
-                    setActive({ drill: bigramDrill(weak.bigrams.map((b) => b.bigram)), kind: 'drill' })
+                    startActive({ drill: bigramDrill(weak.bigrams.map((b) => b.bigram)), kind: 'drill' })
                   }
                 >
                   drill these pairs
@@ -120,7 +132,7 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
                 </p>
                 <button
                   className="btn"
-                  onClick={() => setActive({ drill: fingerDrill(weak.weakFinger!.finger), kind: 'drill' })}
+                  onClick={() => startActive({ drill: fingerDrill(weak.weakFinger!.finger), kind: 'drill' })}
                 >
                   train it
                 </button>
@@ -132,7 +144,7 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
                 <p className="sub">
                   Several sessions flagged same-hand shift usage. Retrain the opposite-pinky habit.
                 </p>
-                <button className="btn" onClick={() => setActive({ drill: shiftDrill(), kind: 'drill' })}>
+                <button className="btn" onClick={() => startActive({ drill: shiftDrill(), kind: 'drill' })}>
                   shift drill
                 </button>
               </div>
@@ -160,7 +172,7 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
               </div>
               <button
                 className="btn"
-                onClick={() => setActive({ drill: lesson.makeDrill(), kind: 'lesson' })}
+                onClick={() => startActive({ drill: lesson.makeDrill(), kind: 'lesson' })}
               >
                 practice
               </button>
