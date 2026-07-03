@@ -79,7 +79,7 @@ export function useTypingSession(opts: Options): TypingSession {
       if (startRef.current === null) return;
       const elapsed = performance.now() - startRef.current;
       setElapsedMs(elapsed);
-      setLiveWpm(elapsed > 2000 ? correctCharsRef.current / 5 / (elapsed / 60000) : 0);
+      setLiveWpm(elapsed > 2000 ? Math.round(correctCharsRef.current / 5 / (elapsed / 60000)) : 0);
       const { mode, durationSec } = stateRef.current;
       if (mode === 'time' && elapsed >= durationSec * 1000) finish();
     }, 200);
@@ -111,8 +111,10 @@ export function useTypingSession(opts: Options): TypingSession {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      heldRef.current.add(e.code);
-      setActiveCodes(new Set(heldRef.current));
+      if (!e.repeat) {
+        heldRef.current.add(e.code);
+        setActiveCodes(new Set(heldRef.current));
+      }
 
       const s = stateRef.current;
       if (!s.enabled || s.phase === 'finished') return;

@@ -24,7 +24,7 @@ interface Outcome {
 /** Self-contained words-mode exercise used by the training page. */
 export function TypingExercise({ drill, kind, onExit, onDrill }: Props) {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const settings = getSettings();
+  const [settings] = useState(() => getSettings());
 
   const labelRef = useRef(drill.label);
   labelRef.current = drill.label;

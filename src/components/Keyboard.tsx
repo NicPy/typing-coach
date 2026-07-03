@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { baseChar, needsShift, keyInfo, FINGER_COLORS, FINGER_LABELS, type Finger } from '../engine/fingerMap';
 
 interface KeyDef {
@@ -57,7 +58,7 @@ interface Props {
   highlightNext: boolean;
 }
 
-export function Keyboard({ activeCodes, nextChar, highlightNext }: Props) {
+export const Keyboard = memo(function Keyboard({ activeCodes, nextChar, highlightNext }: Props) {
   let nextBase: string | null = null;
   let nextShiftCode: string | null = null;
   if (highlightNext && nextChar) {
@@ -111,4 +112,4 @@ export function Keyboard({ activeCodes, nextChar, highlightNext }: Props) {
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,40 @@
-import { useLayoutEffect, useRef } from 'react';
+import { memo, useLayoutEffect, useRef } from 'react';
+
+interface WordProps {
+  word: string;
+  typed: string;
+  submitted: boolean;
+  wi: number;
+}
+
+/** memoized so a keystroke only re-renders the word being typed, not the whole stream */
+const Word = memo(function Word({ word, typed, submitted, wi }: WordProps) {
+  const wordError = submitted && typed !== word;
+  const len = Math.max(word.length, typed.length);
+  const chars = [];
+  for (let ci = 0; ci < len; ci++) {
+    let cls = 'char pending';
+    let text = word[ci] ?? typed[ci];
+    if (ci < typed.length) {
+      if (ci >= word.length) {
+        cls = 'char extra';
+        text = typed[ci];
+      } else {
+        cls = typed[ci] === word[ci] ? 'char correct' : 'char incorrect';
+      }
+    }
+    chars.push(
+      <span className={cls} key={ci}>
+        {text}
+      </span>,
+    );
+  }
+  return (
+    <span className={`word ${wordError ? 'word-error' : ''}`} data-widx={wi}>
+      {chars}
+    </span>
+  );
+});
 
 interface Props {
   words: string[];
@@ -8,7 +44,7 @@ interface Props {
 }
 
 /** monkeytype-style 3-line word stream with a smooth caret. */
-export function WordStream({ words, typedWords, wordIdx, running }: Props) {
+export const WordStream = memo(function WordStream({ words, typedWords, wordIdx, running }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLDivElement>(null);
 
@@ -43,36 +79,16 @@ export function WordStream({ words, typedWords, wordIdx, running }: Props) {
     <div className="word-stream">
       <div className="word-stream-inner" ref={innerRef}>
         <div className={`caret ${running ? '' : 'blink'}`} ref={caretRef} />
-        {words.map((word, wi) => {
-          const typed = typedWords[wi] ?? '';
-          const submitted = wi < wordIdx;
-          const wordError = submitted && typed !== word;
-          const len = Math.max(word.length, typed.length);
-          const chars = [];
-          for (let ci = 0; ci < len; ci++) {
-            let cls = 'char pending';
-            let text = word[ci] ?? typed[ci];
-            if (ci < typed.length) {
-              if (ci >= word.length) {
-                cls = 'char extra';
-                text = typed[ci];
-              } else {
-                cls = typed[ci] === word[ci] ? 'char correct' : 'char incorrect';
-              }
-            }
-            chars.push(
-              <span className={cls} key={ci}>
-                {text}
-              </span>,
-            );
-          }
-          return (
-            <span className={`word ${wordError ? 'word-error' : ''}`} data-widx={wi} key={wi}>
-              {chars}
-            </span>
-          );
-        })}
+        {words.map((word, wi) => (
+          <Word
+            key={wi}
+            wi={wi}
+            word={word}
+            typed={typedWords[wi] ?? ''}
+            submitted={wi < wordIdx}
+          />
+        ))}
       </div>
     </div>
   );
-}
+});
