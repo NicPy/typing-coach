@@ -67,6 +67,7 @@ describe('computeMetrics', () => {
     const { log, durationMs } = typeText('abcd', { dt: 150, bigramDt: { cd: 10000 } });
     const m = computeMetrics(log, durationMs);
     expect(m.intervalCount).toBe(2); // ab, bc only
+    expect(m.activeDurationMs).toBe(300); // the 10s pause is not typing time
   });
 
   it('gives perfect-rhythm runs a high consistency score', () => {

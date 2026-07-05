@@ -9,7 +9,7 @@ const KEYS = {
   settings: 'tc.settings',
 } as const;
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const MAX_RESULTS = 200;
 
 export interface StoredHint {
@@ -30,6 +30,8 @@ export interface StoredResult {
   accuracy: number;
   consistency: number;
   durationMs: number;
+  /** Active keystroke time. Missing on results saved before schema v2. */
+  activeDurationMs?: number;
   charCount: number;
   errorCount: number;
   slowBigrams: BigramStat[];
@@ -109,6 +111,7 @@ export function saveResult(
     accuracy: metrics.accuracy,
     consistency: metrics.consistency,
     durationMs: metrics.durationMs,
+    activeDurationMs: metrics.activeDurationMs,
     charCount: metrics.charCount,
     errorCount: metrics.errorCount,
     slowBigrams: metrics.bigrams.slice(0, 10),

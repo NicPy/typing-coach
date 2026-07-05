@@ -10,6 +10,7 @@ interface Props {
   /** drill requested from a test's results screen, if any */
   pendingSeed: DrillSeed | null;
   clearPendingSeed: () => void;
+  onSessionSaved: () => void;
 }
 
 interface ActiveDrill {
@@ -57,7 +58,7 @@ function findWeakSpots(): WeakSpots {
   };
 }
 
-export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
+export function TrainingPage({ pendingSeed, clearPendingSeed, onSessionSaved }: Props) {
   const [active, setActive] = useState<ActiveDrill | null>(() =>
     pendingSeed ? { drill: drillFromSeed(pendingSeed), kind: 'drill' } : null,
   );
@@ -87,6 +88,7 @@ export function TrainingPage({ pendingSeed, clearPendingSeed }: Props) {
           kind={active.kind}
           onExit={exit}
           onDrill={startFromHint}
+          onSessionSaved={onSessionSaved}
         />
       </div>
     );

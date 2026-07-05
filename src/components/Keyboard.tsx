@@ -58,6 +58,50 @@ interface Props {
   highlightNext: boolean;
 }
 
+interface KeyCapProps {
+  keyDef: KeyDef;
+  isActive: boolean;
+  isNext: boolean;
+}
+
+const KeyCap = memo(function KeyCap({ keyDef, isActive, isNext }: KeyCapProps) {
+  const finger = keyDef.finger ?? (keyDef.char ? keyInfo(keyDef.char)?.finger : undefined);
+  const color = finger ? FINGER_COLORS[finger] : undefined;
+
+  return (
+    <div
+      className={`kb-key ${isActive ? 'kb-active' : ''} ${isNext ? 'kb-next' : ''}`}
+      style={{
+        flexGrow: keyDef.width,
+        flexBasis: 0,
+        ...(color
+          ? {
+              backgroundColor: `${color}26`,
+              borderColor: isNext || isActive ? color : `${color}55`,
+              ...(isNext ? { boxShadow: `0 0 8px ${color}88` } : {}),
+            }
+          : {}),
+      }}
+      title={finger ? FINGER_LABELS[finger] : undefined}
+    >
+      {keyDef.label}
+    </div>
+  );
+});
+
+const KeyboardLegend = memo(function KeyboardLegend() {
+  return (
+    <div className="kb-legend">
+      {LEGEND.map((finger) => (
+        <span className="kb-legend-item" key={finger}>
+          <span className="kb-legend-dot" style={{ backgroundColor: FINGER_COLORS[finger] }} />
+          {FINGER_LABELS[finger]}
+        </span>
+      ))}
+    </div>
+  );
+});
+
 export const Keyboard = memo(function Keyboard({ activeCodes, nextChar, highlightNext }: Props) {
   let nextBase: string | null = null;
   let nextShiftCode: string | null = null;
@@ -75,41 +119,20 @@ export const Keyboard = memo(function Keyboard({ activeCodes, nextChar, highligh
       {ROWS.map((row, ri) => (
         <div className="kb-row" key={ri}>
           {row.map((key) => {
-            const finger = key.finger ?? (key.char ? keyInfo(key.char)?.finger : undefined);
-            const color = finger ? FINGER_COLORS[finger] : undefined;
             const isActive = activeCodes.has(key.code);
             const isNext = (nextBase !== null && key.char === nextBase) || key.code === nextShiftCode;
             return (
-              <div
+              <KeyCap
                 key={key.code}
-                className={`kb-key ${isActive ? 'kb-active' : ''} ${isNext ? 'kb-next' : ''}`}
-                style={{
-                  flexGrow: key.width,
-                  flexBasis: 0,
-                  ...(color
-                    ? {
-                        backgroundColor: `${color}26`,
-                        borderColor: isNext || isActive ? color : `${color}55`,
-                        ...(isNext ? { boxShadow: `0 0 8px ${color}88` } : {}),
-                      }
-                    : {}),
-                }}
-                title={finger ? FINGER_LABELS[finger] : undefined}
-              >
-                {key.label}
-              </div>
+                keyDef={key}
+                isActive={isActive}
+                isNext={isNext}
+              />
             );
           })}
         </div>
       ))}
-      <div className="kb-legend">
-        {LEGEND.map((f) => (
-          <span className="kb-legend-item" key={f}>
-            <span className="kb-legend-dot" style={{ backgroundColor: FINGER_COLORS[f] }} />
-            {FINGER_LABELS[f]}
-          </span>
-        ))}
-      </div>
+      <KeyboardLegend />
     </div>
   );
 });

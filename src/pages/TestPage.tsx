@@ -11,6 +11,7 @@ import { Results } from '../components/Results';
 
 interface Props {
   onDrill: (hint: Hint) => void;
+  onSessionSaved: () => void;
 }
 
 interface Outcome {
@@ -18,7 +19,7 @@ interface Outcome {
   hints: Hint[];
 }
 
-export function TestPage({ onDrill }: Props) {
+export function TestPage({ onDrill, onSessionSaved }: Props) {
   const [settings, setSettings] = useState<Settings>(() => getSettings());
   const [seed, setSeed] = useState(0);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -38,9 +39,10 @@ export function TestPage({ onDrill }: Props) {
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, 'test', labelRef.current);
       updateAggregates(metrics);
+      onSessionSaved();
     }
     setOutcome({ metrics, hints });
-  }, []);
+  }, [onSessionSaved]);
 
   const session = useTypingSession({
     words,
@@ -88,48 +90,50 @@ export function TestPage({ onDrill }: Props) {
   const nextChar = typedNow.length < currentWord.length ? currentWord[typedNow.length] : ' ';
 
   return (
-    <div className="page test-page" key={seed}>
-      <div className={`fade ${running ? 'faded' : ''}`}>
-        <ConfigBar settings={settings} onChange={(patch) => restart(patch)} />
-      </div>
+    <div className="test-layout" key={seed}>
+      <div className="page test-page">
+        <div className={`fade ${running ? 'faded' : ''}`}>
+          <ConfigBar settings={settings} onChange={restart} />
+        </div>
 
-      {outcome ? (
-        <Results
-          metrics={outcome.metrics}
-          hints={outcome.hints}
-          label={label}
-          onRestart={() => restart()}
-          onDrill={onDrill}
-        />
-      ) : (
-        <>
-          <div className="live-stats">
-            <span className="accent">
-              {settings.mode === 'time'
-                ? `${Math.max(0, settings.durationSec - Math.floor(session.elapsedMs / 1000))}`
-                : `${Math.min(session.wordIdx, settings.wordCount)}/${settings.wordCount}`}
-            </span>
-            {running && session.liveWpm > 0 && <span>{session.liveWpm.toFixed(0)} wpm</span>}
-          </div>
-          <WordStream
-            words={words}
-            typedWords={session.typedWords}
-            wordIdx={session.wordIdx}
-            running={running}
+        {outcome ? (
+          <Results
+            metrics={outcome.metrics}
+            hints={outcome.hints}
+            label={label}
+            onRestart={() => restart()}
+            onDrill={onDrill}
           />
-          <p className="hint-line sub">
-            just start typing · <span className="key-cap">tab</span> restart
-          </p>
-        </>
-      )}
+        ) : (
+          <>
+            <div className="live-stats">
+              <span className="accent">
+                {settings.mode === 'time'
+                  ? `${Math.max(0, settings.durationSec - Math.floor(session.elapsedMs / 1000))}`
+                  : `${Math.min(session.wordIdx, settings.wordCount)}/${settings.wordCount}`}
+              </span>
+              {running && session.liveWpm > 0 && <span>{session.liveWpm.toFixed(0)} wpm</span>}
+            </div>
+            <WordStream
+              words={words}
+              typedWords={session.typedWords}
+              wordIdx={session.wordIdx}
+              running={running}
+            />
+            <p className="hint-line sub">
+              just start typing · <span className="key-cap">tab</span> restart
+            </p>
+          </>
+        )}
 
-      {settings.showKeyboard && (
-        <Keyboard
-          activeCodes={session.activeCodes}
-          nextChar={outcome ? null : nextChar}
-          highlightNext={settings.highlightNextKey && !outcome}
-        />
-      )}
+        {settings.showKeyboard && (
+          <Keyboard
+            activeCodes={session.activeCodes}
+            nextChar={outcome ? null : nextChar}
+            highlightNext={settings.highlightNextKey && !outcome}
+          />
+        )}
+      </div>
     </div>
   );
 }

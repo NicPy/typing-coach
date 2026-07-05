@@ -52,6 +52,8 @@ export interface SessionMetrics {
   /** 0..100, from inter-key interval variance */
   consistency: number;
   durationMs: number;
+  /** Time spent actively typing; pauses longer than MAX_INTERVAL_MS are excluded. */
+  activeDurationMs: number;
   charCount: number;
   correctCount: number;
   errorCount: number;
@@ -90,6 +92,11 @@ export function computeMetrics(log: Keystroke[], durationMs: number): SessionMet
   const wpm = correctCount / 5 / minutes;
   const rawWpm = charCount / 5 / minutes;
   const accuracy = charCount === 0 ? 100 : (correctCount / charCount) * 100;
+  const activeDurationMs = log.reduce((total, key, index) => {
+    if (index === 0) return total;
+    const interval = key.t - log[index - 1].t;
+    return interval > 0 && interval <= MAX_INTERVAL_MS ? total + interval : total;
+  }, 0);
 
   // --- intervals & bigrams -------------------------------------------------
   const intervals: number[] = [];
@@ -247,6 +254,7 @@ export function computeMetrics(log: Keystroke[], durationMs: number): SessionMet
     accuracy,
     consistency,
     durationMs,
+    activeDurationMs,
     charCount,
     correctCount,
     errorCount,

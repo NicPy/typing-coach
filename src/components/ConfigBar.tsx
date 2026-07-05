@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Settings } from '../storage/localStore';
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
 const DURATIONS = [15, 30, 60, 120];
 const WORD_COUNTS = [10, 25, 50, 100];
 
-export function ConfigBar({ settings, onChange }: Props) {
+export const ConfigBar = memo(function ConfigBar({ settings, onChange }: Props) {
   return (
     <div className="config-bar">
       <div className="config-group">
@@ -64,4 +65,4 @@ export function ConfigBar({ settings, onChange }: Props) {
       </div>
     </div>
   );
-}
+});

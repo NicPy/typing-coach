@@ -9,5 +9,7 @@ describe('App', () => {
     expect(html).toContain('typing coach');
     expect(html).toContain('word-stream');
     expect(html).toContain('kb-legend');
+    expect(html).toContain('daily rhythm');
+    expect(html).toContain('Daily activity calendar');
   });
 });

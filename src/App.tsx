@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TestPage } from './pages/TestPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { StatsPage } from './pages/StatsPage';
 import type { DrillSeed, Hint } from './engine/hints';
+import { CalendarTimeline } from './components/CalendarTimeline';
 
 type Page = 'test' | 'training' | 'stats';
 
@@ -15,6 +16,8 @@ function pageFromHash(): Page {
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash);
   const [pendingSeed, setPendingSeed] = useState<DrillSeed | null>(null);
+  const [timelineVersion, setTimelineVersion] = useState(0);
+  const refreshTimeline = useCallback(() => setTimelineVersion((version) => version + 1), []);
 
   useEffect(() => {
     window.history.replaceState(null, '', page === 'test' ? '#' : `#${page}`);
@@ -33,7 +36,7 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className="app has-calendar">
       <header className="header">
         <button className="logo" onClick={() => setPage('test')}>
           <span className="logo-icon">⌨</span> typing coach
@@ -52,12 +55,13 @@ export default function App() {
       </header>
 
       <main className="main">
-        {page === 'test' && <TestPage onDrill={goDrill} />}
+        {page === 'test' && <TestPage onDrill={goDrill} onSessionSaved={refreshTimeline} />}
         {page === 'training' && (
           <TrainingPage
             key={pendingSeed ? 'seeded' : 'plain'}
             pendingSeed={pendingSeed}
             clearPendingSeed={() => setPendingSeed(null)}
+            onSessionSaved={refreshTimeline}
           />
         )}
         {page === 'stats' && <StatsPage />}
@@ -66,6 +70,8 @@ export default function App() {
       <footer className="footer sub">
         data stays in your browser (localStorage) · qwerty · finger colors match the legend
       </footer>
+
+      <CalendarTimeline refreshKey={timelineVersion} />
     </div>
   );
 }

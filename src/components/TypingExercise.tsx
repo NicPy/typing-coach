@@ -14,6 +14,7 @@ interface Props {
   kind: SessionKind;
   onExit: () => void;
   onDrill?: (hint: Hint) => void;
+  onSessionSaved: () => void;
 }
 
 interface Outcome {
@@ -22,7 +23,7 @@ interface Outcome {
 }
 
 /** Self-contained words-mode exercise used by the training page. */
-export function TypingExercise({ drill, kind, onExit, onDrill }: Props) {
+export function TypingExercise({ drill, kind, onExit, onDrill, onSessionSaved }: Props) {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [settings] = useState(() => getSettings());
 
@@ -37,9 +38,10 @@ export function TypingExercise({ drill, kind, onExit, onDrill }: Props) {
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, kindRef.current, labelRef.current);
       updateAggregates(metrics);
+      onSessionSaved();
     }
     setOutcome({ metrics, hints });
-  }, []);
+  }, [onSessionSaved]);
 
   const session = useTypingSession({
     words: drill.words,
