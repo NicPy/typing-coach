@@ -1,0 +1,6 @@
+node_modules
+dist
+tls.yaml
+deploy/k8s.yaml
+.git
+.DS_Store
