@@ -12,7 +12,35 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # Needed for cache export; the default docker driver can't write type=gha.
+      - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
           push: true
           tags: ghcr.io/nicpy/typing-coach:${{ github.sha }},ghcr.io/nicpy/typing-coach:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Point sidehub-infra at the image we just pushed; Argo CD deploys from there.
+  bump-infra:
+    needs: image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: NicPy/sidehub-infra
+          token: ${{ secrets.INFRA_PAT }}
+      - name: Update image sha in apps/typing-coach/deployment.yaml
+        env:
+          SHA: ${{ github.sha }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          sed -i "s|\(image: ghcr.io/nicpy/typing-coach:\).*|\1${SHA}|" apps/typing-coach/deployment.yaml
+          if git diff --quiet; then
+            echo "deployment.yaml already at ${SHA}, nothing to bump"
+            exit 0
+          fi
+          git config user.name "typing-coach-ci"
+          git config user.email "samohyn1@gmail.com"
+          git commit -am "Bump typing-coach to ${SHA::7} (${HEAD_MSG%%$'\n'*})"
+          git push
