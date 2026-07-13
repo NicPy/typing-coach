@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { LESSONS } from '../data/lessons';
+import { CODING_DRILLS } from '../data/codingDrills';
+import { LESSONS, type Lesson } from '../data/lessons';
 import { bigramDrill, drillFromSeed, fingerDrill, shiftDrill, type Drill } from '../engine/drills';
 import { classifyBigram, FINGER_LABELS, type Finger } from '../engine/fingerMap';
 import type { DrillSeed, Hint } from '../engine/hints';
@@ -56,6 +57,24 @@ function findWeakSpots(): WeakSpots {
     shiftFlagged: agg.sameHandShiftSessions >= 2,
     sessions: agg.sessionCount,
   };
+}
+
+function LessonList({ lessons, onStart }: { lessons: Lesson[]; onStart: (lesson: Lesson) => void }) {
+  return (
+    <div className="lesson-list">
+      {lessons.map((lesson) => (
+        <div className="lesson" key={lesson.id}>
+          <div className="lesson-body">
+            <h3>{lesson.title}</h3>
+            <p className="sub">{lesson.summary}</p>
+          </div>
+          <button className="btn" onClick={() => onStart(lesson)}>
+            practice
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function TrainingPage({ pendingSeed, clearPendingSeed, onSessionSaved }: Props) {
@@ -165,22 +184,22 @@ export function TrainingPage({ pendingSeed, clearPendingSeed, onSessionSaved }: 
         <p className="sub">
           The habits that move typing speed the most, in order. Read the note, then run the drill.
         </p>
-        <div className="lesson-list">
-          {LESSONS.map((lesson) => (
-            <div className="lesson" key={lesson.id}>
-              <div className="lesson-body">
-                <h3>{lesson.title}</h3>
-                <p className="sub">{lesson.summary}</p>
-              </div>
-              <button
-                className="btn"
-                onClick={() => startActive({ drill: lesson.makeDrill(), kind: 'lesson' })}
-              >
-                practice
-              </button>
-            </div>
-          ))}
-        </div>
+        <LessonList
+          lessons={LESSONS}
+          onStart={(lesson) => startActive({ drill: lesson.makeDrill(), kind: 'lesson' })}
+        />
+      </section>
+
+      <section>
+        <h2>coding</h2>
+        <p className="sub">
+          Code is symbols, identifiers, and numbers — territory prose typing never visits. Same
+          rules as above: accuracy first, opposite-pinky shift, home row between reaches.
+        </p>
+        <LessonList
+          lessons={CODING_DRILLS}
+          onStart={(lesson) => startActive({ drill: lesson.makeDrill(), kind: 'lesson' })}
+        />
       </section>
     </div>
   );
