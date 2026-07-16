@@ -17,6 +17,8 @@ targeted drills for exactly those weaknesses.
 - **Training page** — a best-practices curriculum (home row, accuracy-first,
   opposite-hand shift, bigram flow, same-finger jumps, rhythm) plus personalized drills
   generated from your accumulated weak spots.
+- **Exercise todos** — save a completed drill for another day, start it again from the
+  todos page, and keep it queued until the result feels satisfactory.
 - **Stats** — run history with dates, wpm trend, every hint the coach ever gave, and a
   user-set target wpm with progress tracking.
 

@@ -9,9 +9,20 @@ interface Props {
   onRestart: () => void;
   onDrill?: (hint: Hint) => void;
   compact?: boolean;
+  isTodo?: boolean;
+  onAddTodo?: () => void;
 }
 
-export function Results({ metrics, hints, label, onRestart, onDrill, compact }: Props) {
+export function Results({
+  metrics,
+  hints,
+  label,
+  onRestart,
+  onDrill,
+  compact,
+  isTodo,
+  onAddTodo,
+}: Props) {
   return (
     <div className="results">
       <div className="results-main">
@@ -72,6 +83,11 @@ export function Results({ metrics, hints, label, onRestart, onDrill, compact }: 
         <button className="btn" onClick={onRestart}>
           next {compact ? 'round' : 'test'} <span className="key-cap">tab</span>
         </button>
+        {onAddTodo && (
+          <button className="btn" onClick={onAddTodo} disabled={isTodo}>
+            {isTodo ? 'added to todos' : 'add exercise to todos'}
+          </button>
+        )}
       </div>
     </div>
   );

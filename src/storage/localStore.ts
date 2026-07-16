@@ -2,11 +2,13 @@ import type { BigramStat, SessionMetrics } from '../engine/metrics';
 import type { Hint } from '../engine/hints';
 import type { SessionKind } from '../engine/session';
 import type { Finger } from '../engine/fingerMap';
+import type { Drill } from '../engine/drills';
 
 const KEYS = {
   results: 'tc.results',
   aggregates: 'tc.aggregates',
   settings: 'tc.settings',
+  todos: 'tc.todos',
 } as const;
 
 const SCHEMA_VERSION = 2;
@@ -36,6 +38,16 @@ export interface StoredResult {
   errorCount: number;
   slowBigrams: BigramStat[];
   hints: StoredHint[];
+}
+
+export interface StoredTodo {
+  id: string;
+  /** ISO datetime when the exercise was added */
+  createdAt: string;
+  kind: Exclude<SessionKind, 'test'>;
+  label: string;
+  description: string;
+  words: string[];
 }
 
 export interface Settings {
@@ -121,6 +133,38 @@ export function saveResult(
   all.push(result);
   write(KEYS.results, all.slice(-MAX_RESULTS));
   return result;
+}
+
+// --- todo exercises ---------------------------------------------------------
+
+export function getTodos(): StoredTodo[] {
+  return read<StoredTodo[]>(KEYS.todos, []);
+}
+
+/** The exercise identity is its kind and label, so repeated adds do not create duplicates. */
+export function findTodo(drill: Drill, kind: Exclude<SessionKind, 'test'>): StoredTodo | undefined {
+  return getTodos().find((todo) => todo.kind === kind && todo.label === drill.label);
+}
+
+export function addTodo(drill: Drill, kind: Exclude<SessionKind, 'test'>): StoredTodo {
+  const todos = getTodos();
+  const existing = todos.find((todo) => todo.kind === kind && todo.label === drill.label);
+  if (existing) return existing;
+
+  const todo: StoredTodo = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    kind,
+    label: drill.label,
+    description: drill.description,
+    words: [...drill.words],
+  };
+  write(KEYS.todos, [...todos, todo]);
+  return todo;
+}
+
+export function removeTodo(id: string): void {
+  write(KEYS.todos, getTodos().filter((todo) => todo.id !== id));
 }
 
 // --- aggregates (cross-session weak spots, feed the personalized drills) ----

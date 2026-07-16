@@ -2,15 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { TestPage } from './pages/TestPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { StatsPage } from './pages/StatsPage';
+import { TodosPage } from './pages/TodosPage';
 import type { DrillSeed, Hint } from './engine/hints';
 import { CalendarTimeline } from './components/CalendarTimeline';
 
-type Page = 'test' | 'training' | 'stats';
+type Page = 'test' | 'training' | 'stats' | 'todos';
 
 function pageFromHash(): Page {
   if (typeof window === 'undefined') return 'test';
   const h = window.location.hash.replace('#', '');
-  return h === 'training' || h === 'stats' ? h : 'test';
+  return h === 'training' || h === 'stats' || h === 'todos' ? h : 'test';
 }
 
 export default function App() {
@@ -51,6 +52,9 @@ export default function App() {
           <button className={page === 'stats' ? 'on' : ''} onClick={() => setPage('stats')}>
             stats
           </button>
+          <button className={page === 'todos' ? 'on' : ''} onClick={() => setPage('todos')}>
+            todos
+          </button>
         </nav>
       </header>
 
@@ -65,6 +69,7 @@ export default function App() {
           />
         )}
         {page === 'stats' && <StatsPage />}
+        {page === 'todos' && <TodosPage onSessionSaved={refreshTimeline} />}
       </main>
 
       <footer className="footer sub">

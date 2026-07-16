@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Drill } from '../engine/drills';
 import { computeMetrics, type SessionMetrics } from '../engine/metrics';
 import { generateHints, type Hint } from '../engine/hints';
-import { getSettings, saveResult, updateAggregates } from '../storage/localStore';
+import {
+  addTodo,
+  findTodo,
+  getSettings,
+  saveResult,
+  updateAggregates,
+} from '../storage/localStore';
 import type { SessionKind } from '../engine/session';
 import { useTypingSession, type RawFinish } from '../hooks/useTypingSession';
 import { WordStream } from './WordStream';
@@ -11,7 +17,7 @@ import { Results } from './Results';
 
 interface Props {
   drill: Drill;
-  kind: SessionKind;
+  kind: Exclude<SessionKind, 'test'>;
   onExit: () => void;
   onDrill?: (hint: Hint) => void;
   onSessionSaved: () => void;
@@ -25,6 +31,7 @@ interface Outcome {
 /** Self-contained words-mode exercise used by the training page. */
 export function TypingExercise({ drill, kind, onExit, onDrill, onSessionSaved }: Props) {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [isTodo, setIsTodo] = useState(() => Boolean(findTodo(drill, kind)));
   const [settings] = useState(() => getSettings());
 
   const labelRef = useRef(drill.label);
@@ -56,6 +63,11 @@ export function TypingExercise({ drill, kind, onExit, onDrill, onSessionSaved }:
     setOutcome(null);
     resetSession();
   }, [resetSession]);
+
+  const addExerciseToTodos = useCallback(() => {
+    addTodo(drill, kind);
+    setIsTodo(true);
+  }, [drill, kind]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -96,6 +108,8 @@ export function TypingExercise({ drill, kind, onExit, onDrill, onSessionSaved }:
           onRestart={again}
           onDrill={onDrill}
           compact
+          isTodo={isTodo}
+          onAddTodo={addExerciseToTodos}
         />
       ) : (
         <>
