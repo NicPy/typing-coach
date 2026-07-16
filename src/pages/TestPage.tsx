@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generateWords } from '../data/words-en';
 import { computeMetrics, type SessionMetrics } from '../engine/metrics';
+import { drillFromSeed } from '../engine/drills';
 import { generateHints, type Hint } from '../engine/hints';
-import { getSettings, saveResult, saveSettings, updateAggregates, type Settings } from '../storage/localStore';
+import {
+  addTodo,
+  getSettings,
+  getTodos,
+  saveResult,
+  saveSettings,
+  updateAggregates,
+  type Settings,
+} from '../storage/localStore';
 import { useTypingSession, type RawFinish } from '../hooks/useTypingSession';
 import { WordStream } from '../components/WordStream';
 import { Keyboard } from '../components/Keyboard';
@@ -24,6 +33,7 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   const [seed, setSeed] = useState(0);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [words, setWords] = useState<string[]>(() => initialWords(getSettings()));
+  const [todoHintIds, setTodoHintIds] = useState<Set<string>>(() => new Set());
 
   const label = useMemo(
     () =>
@@ -36,6 +46,20 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   const handleFinish = useCallback((raw: RawFinish) => {
     const metrics = computeMetrics(raw.log, raw.durationMs);
     const hints = generateHints(metrics);
+    const savedDrillLabels = new Set(
+      getTodos()
+        .filter((todo) => todo.kind === 'drill')
+        .map((todo) => todo.label),
+    );
+    setTodoHintIds(
+      new Set(
+        hints
+          .filter(
+            (hint) => hint.drill && savedDrillLabels.has(drillFromSeed(hint.drill).label),
+          )
+          .map((hint) => hint.ruleId),
+      ),
+    );
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, 'test', labelRef.current);
       updateAggregates(metrics);
@@ -59,6 +83,7 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
       setSettings(next);
       setWords(initialWords(next));
       setOutcome(null);
+      setTodoHintIds(new Set());
       resetSession();
       setSeed((s) => s + 1);
     },
@@ -89,6 +114,12 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   const typedNow = session.typedWords[session.wordIdx] ?? '';
   const nextChar = typedNow.length < currentWord.length ? currentWord[typedNow.length] : ' ';
 
+  const addHintToTodos = useCallback((hint: Hint) => {
+    if (!hint.drill) return;
+    addTodo(drillFromSeed(hint.drill), 'drill');
+    setTodoHintIds((ids) => new Set(ids).add(hint.ruleId));
+  }, []);
+
   return (
     <div className="test-layout" key={seed}>
       <div className="page test-page">
@@ -103,6 +134,8 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
             label={label}
             onRestart={() => restart()}
             onDrill={onDrill}
+            todoHintIds={todoHintIds}
+            onAddHintTodo={addHintToTodos}
           />
         ) : (
           <>

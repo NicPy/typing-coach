@@ -11,6 +11,8 @@ interface Props {
   compact?: boolean;
   isTodo?: boolean;
   onAddTodo?: () => void;
+  todoHintIds?: ReadonlySet<string>;
+  onAddHintTodo?: (hint: Hint) => void;
 }
 
 export function Results({
@@ -22,6 +24,8 @@ export function Results({
   compact,
   isTodo,
   onAddTodo,
+  todoHintIds,
+  onAddHintTodo,
 }: Props) {
   return (
     <div className="results">
@@ -64,19 +68,35 @@ export function Results({
 
       <div className="hints">
         <h3 className="hints-title">coach's notes</h3>
-        {hints.map((h) => (
-          <div className="hint" key={h.ruleId}>
-            <div className="hint-head">
-              <span className="hint-name">{h.title}</span>
-              {h.drill && onDrill && (
-                <button className="btn btn-small" onClick={() => onDrill(h)}>
-                  drill this
-                </button>
-              )}
+        {hints.map((h) => {
+          const savedToTodos = todoHintIds?.has(h.ruleId) ?? false;
+          return (
+            <div className="hint" key={h.ruleId}>
+              <div className="hint-head">
+                <span className="hint-name">{h.title}</span>
+                {h.drill && (onDrill || onAddHintTodo) && (
+                  <div className="hint-actions">
+                    {onDrill && (
+                      <button className="btn btn-small" onClick={() => onDrill(h)}>
+                        drill this
+                      </button>
+                    )}
+                    {onAddHintTodo && (
+                      <button
+                        className="btn btn-small"
+                        onClick={() => onAddHintTodo(h)}
+                        disabled={savedToTodos}
+                      >
+                        {savedToTodos ? 'saved to todos' : 'add to todos'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="hint-text">{h.message}</p>
             </div>
-            <p className="hint-text">{h.message}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="results-actions">

@@ -663,6 +663,13 @@ section {
   font-weight: 500;
 }
 
+.hint-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
 .hint-text {
   color: var(--sub);
   margin: 0.35rem 0 0;
@@ -672,6 +679,7 @@ section {
 
 .results-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
@@ -846,6 +854,15 @@ section {
 
   .todo-actions {
     width: 100%;
+  }
+
+  .hint-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hint-actions {
+    flex-wrap: wrap;
   }
 }
 
