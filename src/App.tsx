@@ -69,7 +69,7 @@ export default function App() {
           />
         )}
         {page === 'stats' && <StatsPage />}
-        {page === 'todos' && <TodosPage onSessionSaved={refreshTimeline} />}
+        {page === 'todos' && <TodosPage onSessionSaved={refreshTimeline} onDrill={goDrill} />}
       </main>
 
       <footer className="footer sub">

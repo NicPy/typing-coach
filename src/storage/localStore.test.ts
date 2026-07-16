@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Drill } from '../engine/drills';
-import { addTodo, findTodo, getTodos, removeTodo } from './localStore';
+import {
+  addTestTodo,
+  addTodo,
+  DEFAULT_SETTINGS,
+  findTestTodo,
+  findTodo,
+  getTodos,
+  removeTodo,
+} from './localStore';
 
 class MemoryStorage {
   private data = new Map<string, string>();
@@ -50,5 +58,27 @@ describe('todo storage', () => {
     removeTodo(saved.id);
 
     expect(getTodos()).toEqual([]);
+  });
+
+  it('saves and restores the exact completed main-page test', () => {
+    const settings = { ...DEFAULT_SETTINGS, durationSec: 15, punctuation: true };
+    const words = ['same', 'test', 'text'];
+
+    const saved = addTestTodo(settings, words);
+
+    expect(saved.kind).toBe('test');
+    expect(saved.settings.durationSec).toBe(15);
+    expect(saved.words).toEqual(words);
+    expect(findTestTodo(settings, words)?.id).toBe(saved.id);
+  });
+
+  it('does not duplicate the same completed test', () => {
+    const settings = { ...DEFAULT_SETTINGS, mode: 'words' as const, wordCount: 10 };
+    const words = ['repeat', 'these', 'words'];
+
+    addTestTodo(settings, words);
+    addTestTodo(settings, words);
+
+    expect(getTodos()).toHaveLength(1);
   });
 });

@@ -14,7 +14,7 @@ function outcome() {
 }
 
 describe('Results', () => {
-  it('lets a main-page coach drill be added to todos', () => {
+  it('lets the completed main-page test be added to todos', () => {
     const { metrics, hints } = outcome();
     const html = renderToString(
       createElement(Results, {
@@ -22,18 +22,15 @@ describe('Results', () => {
         hints,
         label: 'time 30',
         onRestart: () => {},
-        onDrill: () => {},
-        onAddHintTodo: () => {},
-        todoHintIds: new Set<string>(),
+        onAddTodo: () => {},
         compact: true,
       }),
     );
 
-    expect(html).toContain('drill this');
-    expect(html).toContain('add to todos');
+    expect(html).toContain('add exercise to todos');
   });
 
-  it('shows when a coach drill is already saved', () => {
+  it('shows when the completed main-page test is already saved', () => {
     const { metrics, hints } = outcome();
     const html = renderToString(
       createElement(Results, {
@@ -41,13 +38,13 @@ describe('Results', () => {
         hints,
         label: 'time 30',
         onRestart: () => {},
-        onAddHintTodo: () => {},
-        todoHintIds: new Set([hints[0].ruleId]),
+        onAddTodo: () => {},
+        isTodo: true,
         compact: true,
       }),
     );
 
-    expect(html).toContain('saved to todos');
+    expect(html).toContain('added to todos');
     expect(html).toContain('disabled');
   });
 });

@@ -40,15 +40,30 @@ export interface StoredResult {
   hints: StoredHint[];
 }
 
-export interface StoredTodo {
+interface StoredTodoBase {
   id: string;
   /** ISO datetime when the exercise was added */
   createdAt: string;
-  kind: Exclude<SessionKind, 'test'>;
   label: string;
   description: string;
   words: string[];
 }
+
+export interface StoredPracticeTodo extends StoredTodoBase {
+  kind: Exclude<SessionKind, 'test'>;
+}
+
+export type TestTodoSettings = Pick<
+  Settings,
+  'mode' | 'durationSec' | 'wordCount' | 'punctuation' | 'numbers'
+>;
+
+export interface StoredTestTodo extends StoredTodoBase {
+  kind: 'test';
+  settings: TestTodoSettings;
+}
+
+export type StoredTodo = StoredPracticeTodo | StoredTestTodo;
 
 export interface Settings {
   /** user-set goal; intentionally has no default in code */
@@ -142,22 +157,100 @@ export function getTodos(): StoredTodo[] {
 }
 
 /** The exercise identity is its kind and label, so repeated adds do not create duplicates. */
-export function findTodo(drill: Drill, kind: Exclude<SessionKind, 'test'>): StoredTodo | undefined {
-  return getTodos().find((todo) => todo.kind === kind && todo.label === drill.label);
+export function findTodo(
+  drill: Drill,
+  kind: Exclude<SessionKind, 'test'>,
+): StoredPracticeTodo | undefined {
+  return getTodos().find(
+    (todo): todo is StoredPracticeTodo =>
+      todo.kind !== 'test' && todo.kind === kind && todo.label === drill.label,
+  );
 }
 
-export function addTodo(drill: Drill, kind: Exclude<SessionKind, 'test'>): StoredTodo {
+export function addTodo(
+  drill: Drill,
+  kind: Exclude<SessionKind, 'test'>,
+): StoredPracticeTodo {
   const todos = getTodos();
-  const existing = todos.find((todo) => todo.kind === kind && todo.label === drill.label);
+  const existing = todos.find(
+    (todo): todo is StoredPracticeTodo =>
+      todo.kind !== 'test' && todo.kind === kind && todo.label === drill.label,
+  );
   if (existing) return existing;
 
-  const todo: StoredTodo = {
+  const todo: StoredPracticeTodo = {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
     kind,
     label: drill.label,
     description: drill.description,
     words: [...drill.words],
+  };
+  write(KEYS.todos, [...todos, todo]);
+  return todo;
+}
+
+function testTodoSettings(settings: Settings | TestTodoSettings): TestTodoSettings {
+  return {
+    mode: settings.mode,
+    durationSec: settings.durationSec,
+    wordCount: settings.wordCount,
+    punctuation: settings.punctuation,
+    numbers: settings.numbers,
+  };
+}
+
+function sameTestSettings(a: TestTodoSettings, b: TestTodoSettings): boolean {
+  return (
+    a.mode === b.mode &&
+    a.durationSec === b.durationSec &&
+    a.wordCount === b.wordCount &&
+    a.punctuation === b.punctuation &&
+    a.numbers === b.numbers
+  );
+}
+
+function sameWords(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((word, index) => word === b[index]);
+}
+
+export function findTestTodo(
+  settings: Settings | TestTodoSettings,
+  words: string[],
+): StoredTestTodo | undefined {
+  const target = testTodoSettings(settings);
+  return getTodos().find(
+    (todo): todo is StoredTestTodo =>
+      todo.kind === 'test' &&
+      sameTestSettings(todo.settings, target) &&
+      sameWords(todo.words, words),
+  );
+}
+
+export function addTestTodo(
+  settings: Settings | TestTodoSettings,
+  words: string[],
+): StoredTestTodo {
+  const todos = getTodos();
+  const target = testTodoSettings(settings);
+  const existing = todos.find(
+    (todo): todo is StoredTestTodo =>
+      todo.kind === 'test' &&
+      sameTestSettings(todo.settings, target) &&
+      sameWords(todo.words, words),
+  );
+  if (existing) return existing;
+
+  const label = target.mode === 'time' ? `time ${target.durationSec}` : `words ${target.wordCount}`;
+  const options = [target.punctuation && 'punctuation', target.numbers && 'numbers'].filter(Boolean);
+  const todo: StoredTestTodo = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    kind: 'test',
+    label,
+    description: `Repeat the same ${label} test${options.length ? ` with ${options.join(' and ')}` : ''}.`,
+    words: [...words],
+    settings: target,
   };
   write(KEYS.todos, [...todos, todo]);
   return todo;

@@ -15,7 +15,9 @@ describe('App', () => {
   });
 
   it('renders an empty todos page without browser storage', () => {
-    const html = renderToString(createElement(TodosPage, { onSessionSaved: () => {} }));
+    const html = renderToString(
+      createElement(TodosPage, { onSessionSaved: () => {}, onDrill: () => {} }),
+    );
 
     expect(html).toContain('nothing queued');
     expect(html).toContain('add exercise to todos');

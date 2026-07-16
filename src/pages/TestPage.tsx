@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generateWords } from '../data/words-en';
 import { computeMetrics, type SessionMetrics } from '../engine/metrics';
-import { drillFromSeed } from '../engine/drills';
 import { generateHints, type Hint } from '../engine/hints';
 import {
-  addTodo,
+  addTestTodo,
+  findTestTodo,
   getSettings,
-  getTodos,
   saveResult,
   saveSettings,
   updateAggregates,
   type Settings,
+  type StoredTestTodo,
 } from '../storage/localStore';
 import { useTypingSession, type RawFinish } from '../hooks/useTypingSession';
 import { WordStream } from '../components/WordStream';
@@ -21,6 +21,8 @@ import { Results } from '../components/Results';
 interface Props {
   onDrill: (hint: Hint) => void;
   onSessionSaved: () => void;
+  initialTodo?: StoredTestTodo;
+  onExit?: () => void;
 }
 
 interface Outcome {
@@ -28,12 +30,16 @@ interface Outcome {
   hints: Hint[];
 }
 
-export function TestPage({ onDrill, onSessionSaved }: Props) {
-  const [settings, setSettings] = useState<Settings>(() => getSettings());
+export function TestPage({ onDrill, onSessionSaved, initialTodo, onExit }: Props) {
+  const [settings, setSettings] = useState<Settings>(() =>
+    initialTodo ? settingsForTodo(initialTodo) : getSettings(),
+  );
   const [seed, setSeed] = useState(0);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [words, setWords] = useState<string[]>(() => initialWords(getSettings()));
-  const [todoHintIds, setTodoHintIds] = useState<Set<string>>(() => new Set());
+  const [words, setWords] = useState<string[]>(() =>
+    initialTodo ? [...initialTodo.words] : initialWords(getSettings()),
+  );
+  const [isTodo, setIsTodo] = useState(Boolean(initialTodo));
 
   const label = useMemo(
     () =>
@@ -42,24 +48,15 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   );
   const labelRef = useRef(label);
   labelRef.current = label;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
 
   const handleFinish = useCallback((raw: RawFinish) => {
     const metrics = computeMetrics(raw.log, raw.durationMs);
     const hints = generateHints(metrics);
-    const savedDrillLabels = new Set(
-      getTodos()
-        .filter((todo) => todo.kind === 'drill')
-        .map((todo) => todo.label),
-    );
-    setTodoHintIds(
-      new Set(
-        hints
-          .filter(
-            (hint) => hint.drill && savedDrillLabels.has(drillFromSeed(hint.drill).label),
-          )
-          .map((hint) => hint.ruleId),
-      ),
-    );
+    setIsTodo(Boolean(findTestTodo(settingsRef.current, wordsRef.current)));
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, 'test', labelRef.current);
       updateAggregates(metrics);
@@ -79,28 +76,35 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   const resetSession = session.reset;
   const restart = useCallback(
     (patch?: Partial<Settings>) => {
-      const next = patch ? saveSettings(patch) : getSettings();
+      const next = initialTodo && !patch
+        ? settingsForTodo(initialTodo)
+        : patch
+          ? saveSettings(patch)
+          : getSettings();
       setSettings(next);
-      setWords(initialWords(next));
+      setWords(initialTodo && !patch ? [...initialTodo.words] : initialWords(next));
       setOutcome(null);
-      setTodoHintIds(new Set());
+      setIsTodo(Boolean(initialTodo));
       resetSession();
       setSeed((s) => s + 1);
     },
-    [resetSession],
+    [initialTodo, resetSession],
   );
 
   // tab restarts, esc restarts from results too
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' || (e.key === 'Escape' && outcome)) {
+      if (e.key === 'Escape' && initialTodo && onExit) {
+        e.preventDefault();
+        onExit();
+      } else if (e.key === 'Tab' || (e.key === 'Escape' && outcome)) {
         e.preventDefault();
         restart();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [restart, outcome]);
+  }, [initialTodo, onExit, restart, outcome]);
 
   // time mode: extend the word stream as the user approaches the end
   useEffect(() => {
@@ -114,18 +118,31 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
   const typedNow = session.typedWords[session.wordIdx] ?? '';
   const nextChar = typedNow.length < currentWord.length ? currentWord[typedNow.length] : ' ';
 
-  const addHintToTodos = useCallback((hint: Hint) => {
-    if (!hint.drill) return;
-    addTodo(drillFromSeed(hint.drill), 'drill');
-    setTodoHintIds((ids) => new Set(ids).add(hint.ruleId));
+  const addTestToTodos = useCallback(() => {
+    addTestTodo(settingsRef.current, wordsRef.current);
+    setIsTodo(true);
   }, []);
 
   return (
     <div className="test-layout" key={seed}>
       <div className="page test-page">
-        <div className={`fade ${running ? 'faded' : ''}`}>
-          <ConfigBar settings={settings} onChange={restart} />
-        </div>
+        {initialTodo ? (
+          <div className="exercise-head">
+            <div>
+              <h3 className="exercise-title">{initialTodo.label}</h3>
+              <p className="sub">{initialTodo.description}</p>
+            </div>
+            {onExit && (
+              <button className="btn btn-small" onClick={onExit}>
+                back <span className="key-cap">esc</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className={`fade ${running ? 'faded' : ''}`}>
+            <ConfigBar settings={settings} onChange={restart} />
+          </div>
+        )}
 
         {outcome ? (
           <Results
@@ -134,8 +151,8 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
             label={label}
             onRestart={() => restart()}
             onDrill={onDrill}
-            todoHintIds={todoHintIds}
-            onAddHintTodo={addHintToTodos}
+            isTodo={isTodo}
+            onAddTodo={addTestToTodos}
           />
         ) : (
           <>
@@ -174,4 +191,8 @@ export function TestPage({ onDrill, onSessionSaved }: Props) {
 function initialWords(settings: Settings): string[] {
   const count = settings.mode === 'time' ? 120 : settings.wordCount;
   return generateWords(count, settings);
+}
+
+function settingsForTodo(todo: StoredTestTodo): Settings {
+  return { ...getSettings(), ...todo.settings };
 }

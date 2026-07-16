@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { TypingExercise } from '../components/TypingExercise';
 import type { Drill } from '../engine/drills';
+import type { Hint } from '../engine/hints';
 import { getTodos, removeTodo, type StoredTodo } from '../storage/localStore';
+import { TestPage } from './TestPage';
 
 interface Props {
   onSessionSaved: () => void;
+  onDrill: (hint: Hint) => void;
 }
 
-export function TodosPage({ onSessionSaved }: Props) {
+export function TodosPage({ onSessionSaved, onDrill }: Props) {
   const [todos, setTodos] = useState<StoredTodo[]>(getTodos);
   const [active, setActive] = useState<StoredTodo | null>(null);
 
@@ -15,6 +18,23 @@ export function TodosPage({ onSessionSaved }: Props) {
     removeTodo(id);
     setTodos((items) => items.filter((item) => item.id !== id));
   };
+
+  const exit = () => {
+    setActive(null);
+    setTodos(getTodos());
+  };
+
+  if (active?.kind === 'test') {
+    return (
+      <TestPage
+        key={active.id}
+        initialTodo={active}
+        onExit={exit}
+        onDrill={onDrill}
+        onSessionSaved={onSessionSaved}
+      />
+    );
+  }
 
   if (active) {
     const drill: Drill = {
@@ -27,10 +47,7 @@ export function TodosPage({ onSessionSaved }: Props) {
         <TypingExercise
           drill={drill}
           kind={active.kind}
-          onExit={() => {
-            setActive(null);
-            setTodos(getTodos());
-          }}
+          onExit={exit}
           onSessionSaved={onSessionSaved}
         />
       </div>
@@ -50,7 +67,7 @@ export function TodosPage({ onSessionSaved }: Props) {
         <div className="todo-empty">
           <h3>nothing queued</h3>
           <p className="sub">
-            Complete an exercise on the training page, then choose “add exercise to todos”.
+            Complete a test or training exercise, then choose “add exercise to todos”.
           </p>
         </div>
       ) : (
@@ -60,7 +77,7 @@ export function TodosPage({ onSessionSaved }: Props) {
               <div className="todo-body">
                 <div className="todo-meta">
                   <span className={`badge badge-${todo.kind}`}>{todo.kind}</span>
-                  <span>{todo.words.length} words</span>
+                  <span>{todo.kind === 'test' ? 'same test text' : `${todo.words.length} words`}</span>
                 </div>
                 <h3>{todo.label}</h3>
                 <p className="sub">{todo.description}</p>
