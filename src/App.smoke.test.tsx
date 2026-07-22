@@ -12,6 +12,7 @@ describe('App', () => {
     expect(html).toContain('kb-legend');
     expect(html).toContain('daily rhythm');
     expect(html).toContain('Daily activity calendar');
+    expect(html).toContain('No personal best yet');
   });
 
   it('renders an empty todos page without browser storage', () => {

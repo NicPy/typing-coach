@@ -6,7 +6,7 @@ import { getTodos, removeTodo, type StoredTodo } from '../storage/localStore';
 import { TestPage } from './TestPage';
 
 interface Props {
-  onSessionSaved: () => void;
+  onSessionSaved: (wpm: number) => void;
   onDrill: (hint: Hint) => void;
 }
 

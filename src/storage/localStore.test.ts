@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   findTestTodo,
   findTodo,
+  getHighestWpm,
   getTodos,
   removeTodo,
 } from './localStore';
@@ -80,5 +81,11 @@ describe('todo storage', () => {
     addTestTodo(settings, words);
 
     expect(getTodos()).toHaveLength(1);
+  });
+
+  it('restores the highest rounded WPM for the header record', () => {
+    storage.setItem('tc.results', JSON.stringify([{ wpm: 61.4 }, { wpm: 72.6 }, { wpm: 68 }]));
+
+    expect(getHighestWpm()).toBe(73);
   });
 });

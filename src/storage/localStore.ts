@@ -121,6 +121,11 @@ export function getResults(): StoredResult[] {
   return read<StoredResult[]>(KEYS.results, []);
 }
 
+/** The integer score used throughout the UI for the user's all-time speed record. */
+export function getHighestWpm(): number {
+  return getResults().reduce((best, result) => Math.max(best, Math.round(result.wpm)), 0);
+}
+
 export function saveResult(
   metrics: SessionMetrics,
   hints: Hint[],

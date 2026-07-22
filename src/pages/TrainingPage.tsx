@@ -11,7 +11,7 @@ interface Props {
   /** drill requested from a test's results screen, if any */
   pendingSeed: DrillSeed | null;
   clearPendingSeed: () => void;
-  onSessionSaved: () => void;
+  onSessionSaved: (wpm: number) => void;
 }
 
 interface ActiveDrill {

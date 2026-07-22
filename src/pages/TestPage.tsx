@@ -20,7 +20,7 @@ import { Results } from '../components/Results';
 
 interface Props {
   onDrill: (hint: Hint) => void;
-  onSessionSaved: () => void;
+  onSessionSaved: (wpm: number) => void;
   initialTodo?: StoredTestTodo;
   onExit?: () => void;
 }
@@ -60,7 +60,7 @@ export function TestPage({ onDrill, onSessionSaved, initialTodo, onExit }: Props
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, 'test', labelRef.current);
       updateAggregates(metrics);
-      onSessionSaved();
+      onSessionSaved(metrics.wpm);
     }
     setOutcome({ metrics, hints });
   }, [onSessionSaved]);

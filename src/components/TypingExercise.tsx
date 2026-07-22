@@ -20,7 +20,7 @@ interface Props {
   kind: Exclude<SessionKind, 'test'>;
   onExit: () => void;
   onDrill?: (hint: Hint) => void;
-  onSessionSaved: () => void;
+  onSessionSaved: (wpm: number) => void;
 }
 
 interface Outcome {
@@ -45,7 +45,7 @@ export function TypingExercise({ drill, kind, onExit, onDrill, onSessionSaved }:
     if (metrics.charCount >= 10) {
       saveResult(metrics, hints, kindRef.current, labelRef.current);
       updateAggregates(metrics);
-      onSessionSaved();
+      onSessionSaved(metrics.wpm);
     }
     setOutcome({ metrics, hints });
   }, [onSessionSaved]);
